@@ -1,9 +1,61 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#111827" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#121826">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Together Timer">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/styles.css">
+  <title>Together Timer</title>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <p class="eyebrow">Shared countdown</p>
+      <h1>Together Timer</h1>
+      <p>Create a timer, control it, and share its current state.</p>
+    </header>
+
+    <section id="setupPanel" class="panel">
+      <h2>Create a timer</h2>
+      <div class="time-inputs">
+        <label>Hours<input id="hours" type="number" min="0" value="0" inputmode="numeric"></label>
+        <label>Minutes<input id="minutes" type="number" min="0" value="30" inputmode="numeric"></label>
+        <label>Seconds<input id="seconds" type="number" min="0" value="0" inputmode="numeric"></label>
+      </div>
+      <label class="title-field">Optional title<input id="timerName" maxlength="60" placeholder="Call again"></label>
+      <p id="setupError" class="error" hidden></p>
+      <button id="createButton" class="button primary">Create timer</button>
+    </section>
+
+    <section id="timerPanel" class="panel timer-panel" hidden>
+      <p id="timerLabel" class="timer-label">Shared countdown</p>
+      <div class="progress-wrap" aria-hidden="true">
+        <svg class="progress-ring" viewBox="0 0 220 220">
+          <circle class="ring-track" cx="110" cy="110" r="96"></circle>
+          <circle id="ringProgress" class="ring-progress" cx="110" cy="110" r="96"></circle>
+        </svg>
+        <div id="countdown" class="countdown">00:30:00</div>
+      </div>
+      <p id="timerStatus" class="status">Ready to start</p>
+
+      <div class="control-grid">
+        <button id="startPauseButton" class="button primary">Start</button>
+        <button id="restartButton" class="button secondary">Restart</button>
+        <button id="minusButton" class="button secondary">−1 minute</button>
+        <button id="plusButton" class="button secondary">+1 minute</button>
+      </div>
+
+      <button id="shareButton" class="button share">Share timer</button>
+      <button id="resetButton" class="button text-button">Reset and create another</button>
+      <p id="shareFeedback" class="feedback" hidden></p>
+    </section>
+  </main>
+
+  <script src="js/timer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
