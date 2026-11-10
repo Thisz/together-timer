@@ -23,6 +23,65 @@ const fmt = ms => {
 };
 const remaining = s => s ? (s.running ? Math.max(0, s.endAt - now()) : Math.max(0, s.remaining)) : 0;
 const validId = id => /^[a-f0-9]{32}$/.test(id || '');
+
+const SAVED_KEY = 'togetherTimerCreatedRoomsV1';
+function savedTimers() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed.filter(item => item && validId(item.id)).slice(0, 4) : [];
+  } catch (_) { return []; }
+}
+function storeTimers(items) {
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(items.slice(0, 4))); }
+  catch (error) { console.warn('Could not save timer list', error); }
+  renderSavedTimers();
+}
+function rememberCreated(id, title, duration) {
+  const list = savedTimers().filter(item => item.id !== id);
+  list.unshift({id, title: title || 'Untitled timer', duration, createdAt: Date.now()});
+  storeTimers(list);
+}
+function openSavedTimer(id) {
+  if (!validId(id) || !database) return;
+  try {
+    history.replaceState({}, '', location.pathname + '?room=' + id);
+    localStorage.setItem('togetherTimerRoom', id);
+  } catch (error) { console.warn(error); }
+  join(id);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function renderSavedTimers() {
+  const list = savedTimers(), panel = el('savedTimersPanel'), holder = el('savedTimersList');
+  panel.hidden = list.length === 0;
+  el('savedCount').textContent = list.length + '/4';
+  holder.replaceChildren();
+  list.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'saved-timer';
+    const info = document.createElement('div');
+    info.className = 'saved-timer-info';
+    const title = document.createElement('strong');
+    title.textContent = item.title || 'Untitled timer';
+    const detail = document.createElement('small');
+    detail.textContent = fmt(item.duration || 0) + (item.id === roomId ? ' · Currently open' : '');
+    info.append(title, detail);
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'button secondary saved-open';
+    open.textContent = item.id === roomId ? 'Viewing' : 'Open';
+    open.disabled = item.id === roomId;
+    open.addEventListener('click', () => openSavedTimer(item.id));
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'saved-remove';
+    remove.textContent = 'Remove';
+    remove.setAttribute('aria-label', 'Remove ' + (item.title || 'Untitled timer') + ' from My timers');
+    remove.addEventListener('click', () => storeTimers(savedTimers().filter(t => t.id !== item.id)));
+    row.append(info, open, remove);
+    holder.append(row);
+  });
+}
+
 function setControls() {
   controls.forEach(id => el(id).disabled = !ready || busy);
   el('shareButton').disabled = !ready;
@@ -64,6 +123,7 @@ function join(id) {
   showTimer();
   feedback('Connecting to shared timer…');
   setControls();
+  renderSavedTimers();
   unsubscribe = roomRef.on('value', snapshot => {
     const data = snapshot.val();
     if (!data || typeof data.originalDuration !== 'number') {
@@ -140,6 +200,7 @@ el('createButton').addEventListener('click', async () => {
     });
     history.replaceState({}, '', location.pathname + '?room=' + id);
     localStorage.setItem('togetherTimerRoom', id);
+    rememberCreated(id, title, duration);
     join(id);
   } catch (error) {
     el('setupError').textContent = 'Could not create timer: ' + error.message;
@@ -169,6 +230,7 @@ el('resetButton').addEventListener('click', () => {
   try { localStorage.removeItem('togetherTimerRoom'); } catch (error) { console.warn(error); }
   try { history.replaceState({}, '', location.pathname); } catch (error) { console.warn(error); }
   detach();
+  renderSavedTimers();
   feedback('');
 });
 setInterval(() => { if (ready && state) render(); }, 200);
@@ -183,6 +245,7 @@ async function init() {
     const id = params.get('room') || localStorage.getItem('togetherTimerRoom');
     if (id) join(id);
     else feedback('');
+    renderSavedTimers();
   } catch (error) {
     feedback('Firebase connection failed: ' + error.message + '. Enable Anonymous sign-in in Firebase Authentication.');
   }
