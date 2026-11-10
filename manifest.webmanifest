@@ -1,0 +1,17 @@
+{
+  "name": "Together Timer",
+  "short_name": "Together Timer",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#121826",
+  "theme_color": "#121826",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
