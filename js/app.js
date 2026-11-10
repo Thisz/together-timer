@@ -52,7 +52,7 @@ function showSetup() {
   document.title = 'Together Timer';
 }
 function detach() {
-  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  if (roomRef && unsubscribe) { roomRef.off('value', unsubscribe); unsubscribe = null; }
   roomRef = null; roomId = null; state = null; ready = false;
   wasFinished = false;
 }
