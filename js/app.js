@@ -52,7 +52,7 @@ function showSetup() {
   document.title = 'Together Timer';
 }
 function detach() {
-  if (roomRef && unsubscribe) { roomRef.off('value', unsubscribe); unsubscribe = null; }
+  if (roomRef && unsubscribe) { try { roomRef.off('value', unsubscribe); } catch (error) { console.warn('Listener cleanup failed', error); } unsubscribe = null; }
   roomRef = null; roomId = null; state = null; ready = false;
   wasFinished = false;
 }
@@ -164,11 +164,12 @@ el('shareButton').addEventListener('click', async () => {
   el('shareFeedback').hidden = false;
 });
 el('resetButton').addEventListener('click', () => {
-  detach();
-  localStorage.removeItem('togetherTimerRoom');
-  history.replaceState({}, '', location.pathname);
-  feedback('');
+  // Show the form first so listener cleanup cannot prevent navigation.
   showSetup();
+  try { localStorage.removeItem('togetherTimerRoom'); } catch (error) { console.warn(error); }
+  try { history.replaceState({}, '', location.pathname); } catch (error) { console.warn(error); }
+  detach();
+  feedback('');
 });
 setInterval(() => { if (ready && state) render(); }, 200);
 async function init() {
