@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#121826"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Together Timer">
-<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=4">
+<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=5">
 <title>Together Timer</title>
 </head>
 <body>
@@ -35,11 +35,12 @@
 <button id="resetButton" class="button text-button">Create another timer</button>
 <p id="shareFeedback" class="feedback" hidden></p>
 </section>
+<section id="savedTimersPanel" class="panel saved-timers-panel" hidden><h2>My timers <span id="savedCount" class="saved-count"></span></h2><p class="saved-note">Your four most recently created timers on this device. Open any timer to control or share it.</p><div id="savedTimersList" class="saved-timers-list"></div></section>
 <p id="connectionFeedback" class="feedback" role="status" aria-live="polite"></p>
 </main>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-<script src="js/app.js?v=4"></script>
+<script src="js/app.js?v=5"></script>
 </body>
 </html>
