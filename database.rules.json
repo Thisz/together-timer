@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "timers": {
+      "$roomId": {
+        ".read": "auth != null && $roomId.matches(/^[a-f0-9]{32}$/)",
+        ".write": "auth != null && $roomId.matches(/^[a-f0-9]{32}$/) && newData.hasChildren(['title','originalDuration','remaining','running','endAt','updatedAt']) && newData.childrenCount <= 6 && newData.child('title').isString() && newData.child('title').val().length <= 60 && newData.child('originalDuration').isNumber() && newData.child('originalDuration').val() >= 1000 && newData.child('originalDuration').val() <= 31536000000 && newData.child('remaining').isNumber() && newData.child('remaining').val() >= 0 && newData.child('remaining').val() <= 31536000000 && newData.child('running').isBoolean() && newData.child('endAt').isNumber() && newData.child('endAt').val() >= 0 && newData.child('updatedAt').isNumber() && newData.child('updatedAt').val() > 0"
+      }
+    }
+  }
+}
