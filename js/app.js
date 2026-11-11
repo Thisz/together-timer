@@ -79,7 +79,7 @@ function renderSavedTimers() {
     remove.addEventListener('click', () => {
       const removingOpenTimer = item.id === roomId;
       storeTimers(savedTimers().filter(t => t.id !== item.id));
-      if (removingOpenTimer) {
+      if (removingOpenTimer || savedTimers().length === 0) {
         showSetup();
         detach();
         try { localStorage.removeItem('togetherTimerRoom'); } catch (error) { console.warn(error); }
@@ -199,6 +199,13 @@ el('createButton').addEventListener('click', async () => {
     el('setupError').textContent = 'Enter a duration between one second and one year.';
     el('setupError').hidden = false; return;
   }
+  const requestedTitle = el('timerName').value.trim();
+  if (!requestedTitle) {
+    el('setupError').textContent = 'Please enter a name for your timer.';
+    el('setupError').hidden = false;
+    el('timerName').focus();
+    return;
+  }
   el('setupError').hidden = true;
   el('createButton').disabled = true;
   try {
@@ -206,7 +213,7 @@ el('createButton').addEventListener('click', async () => {
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
     const id = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-    const title = el('timerName').value.trim().slice(0, 60);
+    const title = requestedTitle.slice(0, 60);
     await database.ref('timers/' + id).set({
       title, originalDuration:duration, remaining:duration,
       running:false, endAt:0, updatedAt:now()
