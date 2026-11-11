@@ -17,7 +17,7 @@
 <label>Minutes<input id="minutes" type="number" min="0" value="30" inputmode="numeric"></label>
 <label>Seconds<input id="seconds" type="number" min="0" value="0" inputmode="numeric"></label>
 </div>
-<label class="title-field">Optional title<input id="timerName" maxlength="60" placeholder="Call again"></label>
+<label class="title-field">Timer name (required)<input id="timerName" maxlength="60" placeholder="e.g. Dinner countdown" required></label>
 <p id="setupError" class="error" hidden></p>
 <button id="createButton" class="button primary">Create shared timer</button>
 </section>
@@ -42,6 +42,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-<script src="js/app.js?v=7"></script>
+<script src="js/app.js?v=8"></script>
 </body>
 </html>
