@@ -34,7 +34,8 @@ function savedTimers() {
 function storeTimers(items) {
   try { localStorage.setItem(SAVED_KEY, JSON.stringify(items.slice(0, 4))); }
   catch (error) { console.warn('Could not save timer list', error); }
-  if (typeof setControls === 'function') setControls();
+  renderSavedTimers();
+  setControls();
 }
 function rememberCreated(id, title, duration) {
   const list = savedTimers().filter(item => item.id !== id);
@@ -78,8 +79,9 @@ function renderSavedTimers() {
     remove.setAttribute('aria-label', 'Remove ' + (item.title || 'Untitled timer') + ' from My timers');
     remove.addEventListener('click', () => {
       const removingOpenTimer = item.id === roomId;
-      storeTimers(savedTimers().filter(t => t.id !== item.id));
-      if (removingOpenTimer || savedTimers().length === 0) {
+      const remainingTimers = savedTimers().filter(t => t.id !== item.id);
+      storeTimers(remainingTimers);
+      if (removingOpenTimer || remainingTimers.length === 0) {
         showSetup();
         detach();
         try { localStorage.removeItem('togetherTimerRoom'); } catch (error) { console.warn(error); }
