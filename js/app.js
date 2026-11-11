@@ -74,7 +74,7 @@ function renderSavedTimers() {
     open.addEventListener('click', () => openSavedTimer(item.id));
     const edit = document.createElement('button');
     edit.type = 'button';
-    edit.className = 'saved-remove';
+    edit.className = 'button secondary saved-edit';
     edit.textContent = 'Edit name';
     edit.setAttribute('aria-label', 'Edit name of ' + (item.title || 'Untitled timer'));
     edit.addEventListener('click', () => {
@@ -146,6 +146,7 @@ function renderSavedTimers() {
 function setControls() {
   controls.forEach(id => el(id).disabled = !ready || busy);
   el('shareButton').disabled = !ready;
+  el('renameCurrentButton').disabled = !ready;
   el('saveTimerButton').disabled = !ready;
   el('saveTimerButton').hidden = !ready || !roomId || savedTimers().some(item => item.id === roomId);
 }
@@ -276,6 +277,31 @@ el('createButton').addEventListener('click', async () => {
     el('setupError').textContent = 'Could not create timer: ' + error.message;
     el('setupError').hidden = false;
   } finally { el('createButton').disabled = false; }
+});
+el('renameCurrentButton').addEventListener('click', () => {
+  if (!roomId || !ready || !state) return;
+  const id = roomId;
+  const name = state.title || 'Untitled timer';
+  const existing = savedTimers().find(item => item.id === id);
+  if (existing) {
+    const row = Array.from(el('savedTimersList').children).find(node => node.querySelector('[aria-label="Edit name of ' + name + '"]'));
+    const button = row && row.querySelector('.saved-edit');
+    if (button) {
+      button.click();
+      el('savedTimersPanel').scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+  }
+  const next = window.prompt('Enter a new name for this timer:', name);
+  if (next === null) return;
+  const title = next.trim().slice(0, 60);
+  if (!title) { feedback('Please enter a timer name.'); return; }
+  database.ref('timers/' + id + '/title').set(title).then(() => {
+    if (savedTimers().some(item => item.id === id)) {
+      storeTimers(savedTimers().map(item => item.id === id ? {...item,title} : item));
+    }
+    feedback('Timer renamed for everyone sharing it.');
+  }).catch(error => feedback('Could not rename timer: ' + error.message));
 });
 el('saveTimerButton').addEventListener('click', () => {
   if (!ready || !roomId || !state) return;
