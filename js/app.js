@@ -34,7 +34,7 @@ function savedTimers() {
 function storeTimers(items) {
   try { localStorage.setItem(SAVED_KEY, JSON.stringify(items.slice(0, 4))); }
   catch (error) { console.warn('Could not save timer list', error); }
-  renderSavedTimers();
+  if (typeof setControls === 'function') setControls();
 }
 function rememberCreated(id, title, duration) {
   const list = savedTimers().filter(item => item.id !== id);
@@ -85,6 +85,8 @@ function renderSavedTimers() {
 function setControls() {
   controls.forEach(id => el(id).disabled = !ready || busy);
   el('shareButton').disabled = !ready;
+  el('saveTimerButton').disabled = !ready;
+  el('saveTimerButton').hidden = !ready || !roomId || savedTimers().some(item => item.id === roomId);
 }
 function render() {
   if (!state) return;
@@ -206,6 +208,11 @@ el('createButton').addEventListener('click', async () => {
     el('setupError').textContent = 'Could not create timer: ' + error.message;
     el('setupError').hidden = false;
   } finally { el('createButton').disabled = false; }
+});
+el('saveTimerButton').addEventListener('click', () => {
+  if (!ready || !roomId || !state) return;
+  rememberCreated(roomId, state.title || 'Untitled timer', state.originalDuration);
+  feedback('Timer saved to My Timers on this device.');
 });
 el('shareButton').addEventListener('click', async () => {
   if (!roomId) return;
