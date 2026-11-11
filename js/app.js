@@ -72,6 +72,54 @@ function renderSavedTimers() {
     open.textContent = item.id === roomId ? 'Viewing' : 'Open';
     open.disabled = item.id === roomId;
     open.addEventListener('click', () => openSavedTimer(item.id));
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'saved-remove';
+    edit.textContent = 'Edit name';
+    edit.setAttribute('aria-label', 'Edit name of ' + (item.title || 'Untitled timer'));
+    edit.addEventListener('click', () => {
+      const editor = document.createElement('div');
+      editor.className = 'saved-name-editor';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = 60;
+      input.value = item.title || '';
+      input.setAttribute('aria-label', 'New timer name');
+      const message = document.createElement('small');
+      message.setAttribute('role', 'status');
+      const save = document.createElement('button');
+      save.type = 'button';
+      save.className = 'button primary saved-open';
+      save.textContent = 'Save';
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'button secondary saved-open';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', renderSavedTimers);
+      save.addEventListener('click', async () => {
+        const newTitle = input.value.trim();
+        if (!newTitle) { message.textContent = 'Please enter a timer name.'; return; }
+        if (!database) { message.textContent = 'Not connected. Try again.'; return; }
+        save.disabled = true;
+        try {
+          // Update the shared title so every participant sees the change.
+          await database.ref('timers/' + item.id + '/title').set(newTitle);
+          const updated = savedTimers().map(t => t.id === item.id ? {...t, title:newTitle} : t);
+          storeTimers(updated);
+        } catch (error) {
+          message.textContent = 'Could not rename timer: ' + error.message;
+          save.disabled = false;
+        }
+      });
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') save.click();
+        if (event.key === 'Escape') renderSavedTimers();
+      });
+      editor.append(input, save, cancel, message);
+      row.replaceChildren(editor);
+      input.focus();
+      input.select();
+    });
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'saved-remove';
@@ -90,7 +138,7 @@ function renderSavedTimers() {
         renderSavedTimers();
       }
     });
-    row.append(info, open, remove);
+    row.append(info, open, edit, remove);
     holder.append(row);
   });
 }
