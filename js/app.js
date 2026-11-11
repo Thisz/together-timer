@@ -76,7 +76,18 @@ function renderSavedTimers() {
     remove.className = 'saved-remove';
     remove.textContent = 'Remove';
     remove.setAttribute('aria-label', 'Remove ' + (item.title || 'Untitled timer') + ' from My timers');
-    remove.addEventListener('click', () => storeTimers(savedTimers().filter(t => t.id !== item.id)));
+    remove.addEventListener('click', () => {
+      const removingOpenTimer = item.id === roomId;
+      storeTimers(savedTimers().filter(t => t.id !== item.id));
+      if (removingOpenTimer) {
+        showSetup();
+        detach();
+        try { localStorage.removeItem('togetherTimerRoom'); } catch (error) { console.warn(error); }
+        try { history.replaceState({}, '', location.pathname); } catch (error) { console.warn(error); }
+        feedback('');
+        renderSavedTimers();
+      }
+    });
     row.append(info, open, remove);
     holder.append(row);
   });
