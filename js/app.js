@@ -50,8 +50,7 @@ function connectPresence(id) {
     if (!users.length) list.textContent = 'No one has joined the participant list yet.';
   }, error => feedback('Participant list unavailable: ' + error.message));
   const savedName = localStorage.getItem('togetherTimerParticipantName') || '';
-  el('participantName').value = savedName;
-  if (joinedRoom === id && savedName) registerPresence();
+  if (joinedRoom === id && savedName) el('participantName').value = savedName;
 }
 async function registerPresence() {
   if (!roomId || !currentUid || !ready || joinedRoom !== roomId) return;
@@ -68,7 +67,22 @@ async function registerPresence() {
     feedback('');
   } catch(error) { feedback('Could not join participant list: ' + error.message); }
 }
-el('joinPresenceButton').addEventListener('click',registerPresence);
+el('joinPresenceButton').addEventListener('click', () => {
+  const input = el('participantName');
+  const button = el('joinPresenceButton');
+  if (input.hidden) {
+    input.hidden = false;
+    button.textContent = 'Save name';
+    input.focus();
+    input.select();
+    return;
+  }
+  if (!input.value.trim()) { feedback('Please enter your name.'); input.focus(); return; }
+  registerPresence().then(() => {
+    input.hidden = true;
+    button.textContent = 'Edit name';
+  });
+});
 el('confirmJoinButton').addEventListener('click', () => {
   const name = el('joinName').value.trim().slice(0,40);
   if (!name) { el('joinError').textContent='Please enter your name to join.'; el('joinError').hidden=false; return; }
