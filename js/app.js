@@ -15,9 +15,42 @@ const controls = ['startPauseButton', 'restartButton', 'minusButton', 'plusButto
 let database, roomRef, unsubscribe = null, roomId = null, state = null;
 let serverOffset = 0, ready = false, busy = false, wasFinished = false;
 let joinedRoom = null, pendingCreatorName = null;
+let audioContext = null, lastAlarmKey = null;
 let presenceRef = null, presenceRoomRef = null, presenceCallback = null, currentUid = null, connectionRef = null;
 el('ringProgress').style.strokeDasharray = String(circumference);
 const now = () => Date.now() + serverOffset;
+function unlockAlarmAudio() {
+  try {
+    if (!audioContext) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      audioContext = new AudioContextClass();
+    }
+    if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+  } catch (error) { console.warn('Audio unavailable', error); }
+}
+document.addEventListener('pointerdown', unlockAlarmAudio, {passive:true});
+document.addEventListener('keydown', unlockAlarmAudio);
+function playFinishedChime() {
+  if (!audioContext || audioContext.state !== 'running') return;
+  const start = audioContext.currentTime + 0.04;
+  [0, 0.42, 0.84].forEach((delay, index) => {
+    [659.25, 783.99].forEach((frequency, note) => {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const at = start + delay + note * 0.11;
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, at);
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.16, at + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.32);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start(at);
+      oscillator.stop(at + 0.34);
+    });
+  });
+}
 const feedback = message => { el('connectionFeedback').textContent = message || ''; };
 const fmt = ms => {
   const s = Math.ceil(Math.max(0, ms) / 1000);
@@ -244,7 +277,14 @@ function render() {
   el('timerStatus').textContent = finished ? 'Time is up' : state.running ? 'Running · synchronised' : left === state.originalDuration ? 'Ready to start' : 'Paused · synchronised';
   el('startPauseButton').textContent = finished ? 'Start again' : state.running ? 'Pause' : left === state.originalDuration ? 'Start' : 'Resume';
   document.title = state.running && !finished ? fmt(left) + ' — Together Timer' : 'Together Timer';
-  if (finished && !wasFinished && ready && 'vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+  if (finished && !wasFinished && ready && joinedRoom === roomId && state.running) {
+    const alarmKey = roomId + ':' + state.endAt;
+    if (lastAlarmKey !== alarmKey) {
+      lastAlarmKey = alarmKey;
+      playFinishedChime();
+      if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+    }
+  }
   wasFinished = finished;
   setControls();
 }
@@ -266,6 +306,7 @@ function detach() {
   joinedRoom = null;
   roomRef = null; roomId = null; state = null; ready = false;
   wasFinished = false;
+  lastAlarmKey = null;
 }
 function join(id) {
   if (!validId(id)) { feedback('Invalid timer link.'); showSetup(); return; }
