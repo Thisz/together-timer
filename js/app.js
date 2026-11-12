@@ -14,6 +14,7 @@ const circumference = 2 * Math.PI * 96;
 const controls = ['startPauseButton', 'restartButton', 'minusButton', 'plusButton'];
 let database, roomRef, unsubscribe = null, roomId = null, state = null;
 let serverOffset = 0, ready = false, busy = false, wasFinished = false;
+let joinedRoom = null, pendingCreatorName = null;
 let presenceRef = null, presenceRoomRef = null, presenceCallback = null, currentUid = null, connectionRef = null;
 el('ringProgress').style.strokeDasharray = String(circumference);
 const now = () => Date.now() + serverOffset;
@@ -50,10 +51,10 @@ function connectPresence(id) {
   }, error => feedback('Participant list unavailable: ' + error.message));
   const savedName = localStorage.getItem('togetherTimerParticipantName') || '';
   el('participantName').value = savedName;
-  if (savedName) registerPresence();
+  if (joinedRoom === id && savedName) registerPresence();
 }
 async function registerPresence() {
-  if (!roomId || !currentUid || !ready) return;
+  if (!roomId || !currentUid || !ready || joinedRoom !== roomId) return;
   const name = el('participantName').value.trim().slice(0,40);
   if (!name) { feedback('Please enter your name to join the participant list.'); return; }
   localStorage.setItem('togetherTimerParticipantName', name);
@@ -68,6 +69,19 @@ async function registerPresence() {
   } catch(error) { feedback('Could not join participant list: ' + error.message); }
 }
 el('joinPresenceButton').addEventListener('click',registerPresence);
+el('confirmJoinButton').addEventListener('click', () => {
+  const name = el('joinName').value.trim().slice(0,40);
+  if (!name) { el('joinError').textContent='Please enter your name to join.'; el('joinError').hidden=false; return; }
+  if (!ready || !roomId) { el('joinError').textContent='Timer is not ready. Try again.'; el('joinError').hidden=false; return; }
+  el('joinError').hidden=true;
+  localStorage.setItem('togetherTimerParticipantName',name);
+  el('participantName').value=name;
+  joinedRoom=roomId;
+  el('joinGate').hidden=true;
+  el('timerContents').hidden=false;
+  registerPresence();
+  render();
+});
 el('controlsMode').addEventListener('change', async event => {
   if (!isHost() || !roomId) return;
   const id=roomId, mode=event.target.value;
@@ -196,8 +210,8 @@ function renderSavedTimers() {
 }
 
 function setControls() {
-  controls.forEach(id => el(id).disabled = !ready || busy || !mayControl());
-  el('shareButton').disabled = !ready;
+  controls.forEach(id => el(id).disabled = !ready || busy || !mayControl() || joinedRoom !== roomId);
+  el('shareButton').disabled = !ready || joinedRoom !== roomId;
   el('renameCurrentButton').disabled = !ready || !isHost();
   el('hostSettings').hidden = !ready || !isHost();
   el('guestPermissions').hidden = !ready || isHost();
@@ -223,6 +237,8 @@ function render() {
 function showTimer() {
   el('setupPanel').hidden = true;
   el('timerPanel').hidden = false;
+  el('joinGate').hidden = joinedRoom === roomId;
+  el('timerContents').hidden = joinedRoom !== roomId;
 }
 function showSetup() {
   el('timerPanel').hidden = true;
@@ -233,6 +249,7 @@ function showSetup() {
 function detach() {
   if (roomRef && unsubscribe) { try { roomRef.off('value', unsubscribe); } catch (error) { console.warn('Listener cleanup failed', error); } unsubscribe = null; }
   leavePresence();
+  joinedRoom = null;
   roomRef = null; roomId = null; state = null; ready = false;
   wasFinished = false;
 }
@@ -240,6 +257,13 @@ function join(id) {
   if (!validId(id)) { feedback('Invalid timer link.'); showSetup(); return; }
   detach();
   roomId = id;
+  joinedRoom = pendingCreatorName ? id : null;
+  if (pendingCreatorName) {
+    el('participantName').value = pendingCreatorName;
+    localStorage.setItem('togetherTimerParticipantName', pendingCreatorName);
+    pendingCreatorName = null;
+  }
+  el('joinName').value = localStorage.getItem('togetherTimerParticipantName') || '';
   roomRef = database.ref('timers/' + id);
   showTimer();
   feedback('Connecting to shared timer…');
@@ -257,6 +281,7 @@ function join(id) {
     state = data;
     ready = true;
     if (!presenceRoomRef) connectPresence(id);
+    if (joinedRoom === id) registerPresence();
     feedback('');
     render();
   }, error => {
@@ -266,7 +291,7 @@ function join(id) {
   });
 }
 async function change(transform) {
-  if (!roomRef || !ready || busy || !mayControl()) return;
+  if (!roomRef || !ready || busy || !mayControl() || joinedRoom !== roomId) return;
   busy = true; setControls();
   try {
     const result = await roomRef.transaction(current => {
@@ -309,6 +334,13 @@ el('createButton').addEventListener('click', async () => {
     el('setupError').textContent = 'Enter a duration between one second and one year.';
     el('setupError').hidden = false; return;
   }
+  const creatorName = el('creatorName').value.trim().slice(0,40);
+  if (!creatorName) {
+    el('setupError').textContent = 'Please enter your name.';
+    el('setupError').hidden = false;
+    el('creatorName').focus();
+    return;
+  }
   const requestedTitle = el('timerName').value.trim();
   if (!requestedTitle) {
     el('setupError').textContent = 'Please enter a name for your timer.';
@@ -331,6 +363,7 @@ el('createButton').addEventListener('click', async () => {
     history.replaceState({}, '', location.pathname + '?room=' + id);
     localStorage.setItem('togetherTimerRoom', id);
     rememberCreated(id, title, duration);
+    pendingCreatorName = creatorName;
     join(id);
   } catch (error) {
     el('setupError').textContent = 'Could not create timer: ' + error.message;
