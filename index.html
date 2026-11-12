@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#121826"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Together Timer">
-<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=12">
+<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=13">
 <title>Together Timer</title>
 </head>
 <body>
@@ -18,11 +18,13 @@
 <label>Seconds<input id="seconds" type="number" min="0" value="0" inputmode="numeric"></label>
 </div>
 <label class="title-field">Timer name (required)<input id="timerName" maxlength="60" placeholder="e.g. Dinner countdown" required></label>
+<label class="title-field">Your name (required)<input id="creatorName" maxlength="40" placeholder="e.g. Danny" required></label>
 <p id="setupError" class="error" hidden></p>
 <button id="createButton" class="button primary">Create shared timer</button>
 </section>
 <section id="timerPanel" class="panel timer-panel" hidden>
-<p id="timerLabel" class="timer-label">Shared countdown</p>
+<section id="joinGate" class="room-section" hidden><h2>Join this timer</h2><p class="saved-note">Enter your name to join the shared timer.</p><input id="joinName" maxlength="40" placeholder="Your name" aria-label="Your name" required><button id="confirmJoinButton" class="button primary" style="margin-top:12px">Join timer</button><p id="joinError" class="error" hidden></p></section>
+<div id="timerContents" hidden><p id="timerLabel" class="timer-label">Shared countdown</p>
 <div class="progress-wrap" aria-hidden="true"><svg class="progress-ring" viewBox="0 0 220 220"><circle class="ring-track" cx="110" cy="110" r="96"></circle><circle id="ringProgress" class="ring-progress" cx="110" cy="110" r="96"></circle></svg><div id="countdown" class="countdown">00:30:00</div></div>
 <p id="timerStatus" class="status">Connecting…</p>
 <div class="control-grid">
@@ -38,6 +40,7 @@
 <button id="saveTimerButton" class="button secondary">Save this timer to My Timers</button>
 <button id="resetButton" class="button text-button">Create another timer</button>
 <p id="shareFeedback" class="feedback" hidden></p>
+</div>
 </section>
 <section id="savedTimersPanel" class="panel saved-timers-panel" hidden><h2>My timers <span id="savedCount" class="saved-count"></span></h2><p class="saved-note">Your four most recently created timers on this device. Open any timer to control or share it.</p><div id="savedTimersList" class="saved-timers-list"></div></section>
 <p id="connectionFeedback" class="feedback" role="status" aria-live="polite"></p>
@@ -45,6 +48,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-<script src="js/app.js?v=12"></script>
+<script src="js/app.js?v=13"></script>
 </body>
 </html>
