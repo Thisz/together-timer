@@ -3,7 +3,35 @@
     "timers": {
       "$roomId": {
         ".read": "auth != null && $roomId.matches(/^[a-f0-9]{32}$/)",
-        ".write": "auth != null && $roomId.matches(/^[a-f0-9]{32}$/) && newData.hasChildren(['title','originalDuration','remaining','running','endAt','updatedAt']) && newData.child('title').isString() && newData.child('title').val().length <= 60 && newData.child('originalDuration').isNumber() && newData.child('originalDuration').val() >= 1000 && newData.child('originalDuration').val() <= 31536000000 && newData.child('remaining').isNumber() && newData.child('remaining').val() >= 0 && newData.child('remaining').val() <= 31536000000 && newData.child('running').isBoolean() && newData.child('endAt').isNumber() && newData.child('endAt').val() >= 0 && newData.child('updatedAt').isNumber() && newData.child('updatedAt').val() > 0"
+        ".write": "auth != null && $roomId.matches(/^[a-f0-9]{32}$/) && ((!data.exists() && newData.child('ownerUid').val() === auth.uid) || (data.exists() && newData.exists() && ((data.child('ownerUid').exists() && newData.child('ownerUid').val() === data.child('ownerUid').val() && (auth.uid === data.child('ownerUid').val() || (data.child('controlsMode').val() === 'everyone' && newData.child('title').val() === data.child('title').val() && newData.child('controlsMode').val() === data.child('controlsMode').val()))) || (!data.child('ownerUid').exists() && !newData.child('ownerUid').exists()))))",
+        ".validate": "newData.hasChildren(['title','originalDuration','remaining','running','endAt','updatedAt']) && newData.child('title').isString() && newData.child('title').val().length > 0 && newData.child('title').val().length <= 60 && newData.child('originalDuration').isNumber() && newData.child('originalDuration').val() >= 1000 && newData.child('originalDuration').val() <= 31536000000 && newData.child('remaining').isNumber() && newData.child('remaining').val() >= 0 && newData.child('remaining').val() <= 31536000000 && newData.child('running').isBoolean() && newData.child('endAt').isNumber() && newData.child('endAt').val() >= 0 && newData.child('updatedAt').isNumber() && newData.child('updatedAt').val() > 0 && (!newData.child('ownerUid').exists() || (newData.child('ownerUid').isString() && (newData.child('controlsMode').val() === 'everyone' || newData.child('controlsMode').val() === 'host')))",
+        "title": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
+        },
+        "ownerUid": {
+          ".validate": "newData.isString()"
+        },
+        "controlsMode": {
+          ".validate": "newData.val() === 'everyone' || newData.val() === 'host'"
+        }
+      }
+    },
+    "presence": {
+      "$roomId": {
+        ".read": "auth != null && $roomId.matches(/^[a-f0-9]{32}$/) && root.child('timers').child($roomId).exists()",
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && $roomId.matches(/^[a-f0-9]{32}$/) && root.child('timers').child($roomId).exists()",
+          ".validate": "newData.hasChildren(['name','onlineAt'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40"
+          },
+          "onlineAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
       }
     }
   }
