@@ -32,7 +32,9 @@ function unlockAlarmAudio() {
 document.addEventListener('pointerdown', unlockAlarmAudio, {passive:true});
 document.addEventListener('keydown', unlockAlarmAudio);
 function playFinishedChime() {
-  if (!audioContext || audioContext.state !== 'running') return;
+  unlockAlarmAudio();
+  if (!audioContext) return false;
+  if (audioContext.state !== 'running') { audioContext.resume().catch(() => {}); return false; }
   const start = audioContext.currentTime + 0.04;
   [0, 0.42, 0.84].forEach((delay, index) => {
     [659.25, 783.99].forEach((frequency, note) => {
@@ -50,7 +52,13 @@ function playFinishedChime() {
       oscillator.stop(at + 0.34);
     });
   });
+  return true;
 }
+el('testSoundButton').addEventListener('click', () => {
+  unlockAlarmAudio();
+  const played = playFinishedChime();
+  el('soundFeedback').textContent = played ? 'Alert played. If you cannot hear it, check your laptop volume and browser tab.' : 'Audio is blocked. Click Test alert sound again or check browser sound permissions.';
+});
 const feedback = message => { el('connectionFeedback').textContent = message || ''; };
 const fmt = ms => {
   const s = Math.ceil(Math.max(0, ms) / 1000);
@@ -281,7 +289,8 @@ function render() {
     const alarmKey = roomId + ':' + state.endAt;
     if (lastAlarmKey !== alarmKey) {
       lastAlarmKey = alarmKey;
-      playFinishedChime();
+      const played = playFinishedChime();
+      if (!played) el('soundFeedback').textContent = 'Sound was blocked. Click Test alert sound to enable it.';
       if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
     }
   }
