@@ -14,6 +14,7 @@ const circumference = 2 * Math.PI * 96;
 const controls = ['startPauseButton', 'restartButton', 'minusButton', 'plusButton'];
 let database, roomRef, unsubscribe = null, roomId = null, state = null;
 let serverOffset = 0, ready = false, busy = false, wasFinished = false;
+let presenceRef = null, presenceRoomRef = null, presenceCallback = null, currentUid = null, connectionRef = null;
 el('ringProgress').style.strokeDasharray = String(circumference);
 const now = () => Date.now() + serverOffset;
 const feedback = message => { el('connectionFeedback').textContent = message || ''; };
@@ -23,6 +24,56 @@ const fmt = ms => {
 };
 const remaining = s => s ? (s.running ? Math.max(0, s.endAt - now()) : Math.max(0, s.remaining)) : 0;
 const validId = id => /^[a-f0-9]{32}$/.test(id || '');
+const isHost = () => !!(state && state.ownerUid && state.ownerUid === currentUid);
+const mayControl = () => !!(state && (!state.ownerUid || isHost() || state.controlsMode !== 'host'));
+function leavePresence() {
+  if (presenceRoomRef && presenceCallback) presenceRoomRef.off('value', presenceCallback);
+  presenceCallback = null; presenceRoomRef = null;
+  if (presenceRef) { const old = presenceRef; presenceRef = null; old.remove().catch(() => {}); }
+  connectionRef = null;
+  el('participantsList').replaceChildren();
+  el('participantCount').textContent = '';
+}
+function connectPresence(id) {
+  presenceRoomRef = database.ref('presence/' + id);
+  presenceCallback = presenceRoomRef.on('value', snap => {
+    if (id !== roomId) return;
+    const list = el('participantsList'); list.replaceChildren();
+    const users = Object.entries(snap.val() || {}).filter(([,v]) => v && v.name);
+    el('participantCount').textContent = users.length + ' online';
+    users.forEach(([uid,v]) => {
+      const item = document.createElement('div'); item.className = 'participant-item';
+      item.textContent = v.name + (uid === state?.ownerUid ? ' · Host' : '') + (uid === currentUid ? ' · You' : '');
+      list.append(item);
+    });
+    if (!users.length) list.textContent = 'No one has joined the participant list yet.';
+  }, error => feedback('Participant list unavailable: ' + error.message));
+  const savedName = localStorage.getItem('togetherTimerParticipantName') || '';
+  el('participantName').value = savedName;
+  if (savedName) registerPresence();
+}
+async function registerPresence() {
+  if (!roomId || !currentUid || !ready) return;
+  const name = el('participantName').value.trim().slice(0,40);
+  if (!name) { feedback('Please enter your name to join the participant list.'); return; }
+  localStorage.setItem('togetherTimerParticipantName', name);
+  const id = roomId;
+  const ref = database.ref('presence/' + id + '/' + currentUid);
+  try {
+    await ref.onDisconnect().remove();
+    if (roomId !== id) return;
+    await ref.set({name,onlineAt:firebase.database.ServerValue.TIMESTAMP});
+    presenceRef = ref;
+    feedback('');
+  } catch(error) { feedback('Could not join participant list: ' + error.message); }
+}
+el('joinPresenceButton').addEventListener('click',registerPresence);
+el('controlsMode').addEventListener('change', async event => {
+  if (!isHost() || !roomId) return;
+  const id=roomId, mode=event.target.value;
+  try { await database.ref('timers/'+id+'/controlsMode').set(mode); }
+  catch(error) { feedback('Could not change permissions: '+error.message); el('controlsMode').value=state.controlsMode||'everyone'; }
+});
 
 const SAVED_KEY = 'togetherTimerCreatedRoomsV1';
 function savedTimers() {
@@ -77,6 +128,7 @@ function renderSavedTimers() {
     edit.className = 'button secondary saved-edit';
     edit.textContent = 'Edit name';
     edit.setAttribute('aria-label', 'Edit name of ' + (item.title || 'Untitled timer'));
+    edit.disabled = item.id === roomId && !!state?.ownerUid && !isHost();
     edit.addEventListener('click', () => {
       const editor = document.createElement('div');
       editor.className = 'saved-name-editor';
@@ -144,9 +196,13 @@ function renderSavedTimers() {
 }
 
 function setControls() {
-  controls.forEach(id => el(id).disabled = !ready || busy);
+  controls.forEach(id => el(id).disabled = !ready || busy || !mayControl());
   el('shareButton').disabled = !ready;
-  el('renameCurrentButton').disabled = !ready;
+  el('renameCurrentButton').disabled = !ready || !isHost();
+  el('hostSettings').hidden = !ready || !isHost();
+  el('guestPermissions').hidden = !ready || isHost();
+  el('guestPermissions').textContent = state?.ownerUid ? (mayControl() ? 'The host allows everyone to control this timer.' : 'Only the host can control this timer.') : 'Older timer: shared controls are enabled.';
+  if (state && isHost()) el('controlsMode').value = state.controlsMode || 'everyone';
   el('saveTimerButton').disabled = !ready;
   el('saveTimerButton').hidden = !ready || !roomId || savedTimers().some(item => item.id === roomId);
 }
@@ -176,6 +232,7 @@ function showSetup() {
 }
 function detach() {
   if (roomRef && unsubscribe) { try { roomRef.off('value', unsubscribe); } catch (error) { console.warn('Listener cleanup failed', error); } unsubscribe = null; }
+  leavePresence();
   roomRef = null; roomId = null; state = null; ready = false;
   wasFinished = false;
 }
@@ -199,6 +256,7 @@ function join(id) {
     }
     state = data;
     ready = true;
+    if (!presenceRoomRef) connectPresence(id);
     feedback('');
     render();
   }, error => {
@@ -208,11 +266,12 @@ function join(id) {
   });
 }
 async function change(transform) {
-  if (!roomRef || !ready || busy) return;
+  if (!roomRef || !ready || busy || !mayControl()) return;
   busy = true; setControls();
   try {
     const result = await roomRef.transaction(current => {
       if (!current || typeof current.originalDuration !== 'number') return;
+      if (current.ownerUid && current.ownerUid !== currentUid && current.controlsMode === 'host') return;
       const t = now(), left = current.running ? Math.max(0, current.endAt - t) : Math.max(0, current.remaining);
       const next = transform(current, left, t);
       if (!next) return;
@@ -267,7 +326,7 @@ el('createButton').addEventListener('click', async () => {
     const title = requestedTitle.slice(0, 60);
     await database.ref('timers/' + id).set({
       title, originalDuration:duration, remaining:duration,
-      running:false, endAt:0, updatedAt:now()
+      running:false, endAt:0, updatedAt:now(), ownerUid:currentUid, controlsMode:'everyone'
     });
     history.replaceState({}, '', location.pathname + '?room=' + id);
     localStorage.setItem('togetherTimerRoom', id);
@@ -279,7 +338,7 @@ el('createButton').addEventListener('click', async () => {
   } finally { el('createButton').disabled = false; }
 });
 el('renameCurrentButton').addEventListener('click', () => {
-  if (!roomId || !ready || !state) return;
+  if (!roomId || !ready || !state || !isHost()) return;
   const id = roomId;
   const name = state.title || 'Untitled timer';
   const existing = savedTimers().find(item => item.id === id);
@@ -341,7 +400,8 @@ async function init() {
     firebase.initializeApp(firebaseConfig);
     database = firebase.database();
     database.ref('.info/serverTimeOffset').on('value', snap => { serverOffset = Number(snap.val()) || 0; });
-    await firebase.auth().signInAnonymously();
+    const credential = await firebase.auth().signInAnonymously();
+    currentUid = credential.user.uid;
     const params = new URLSearchParams(location.search);
     const id = params.get('room') || localStorage.getItem('togetherTimerRoom');
     if (id) join(id);
