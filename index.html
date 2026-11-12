@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#121826"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Together Timer">
-<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=13">
+<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=14">
 <title>Together Timer</title>
 </head>
 <body>
@@ -33,7 +33,7 @@
 <button id="minusButton" class="button secondary">−1 minute</button>
 <button id="plusButton" class="button secondary">+1 minute</button>
 </div>
-<section class="room-section"><h2>People here <span id="participantCount" class="saved-count"></span></h2><p class="saved-note">Enter a name to appear in this timer. Online names update automatically.</p><div class="name-row"><input id="participantName" maxlength="40" placeholder="Your name" aria-label="Your participant name"><button id="joinPresenceButton" class="button secondary">Join</button></div><div id="participantsList" class="participant-list" aria-live="polite"></div></section>
+<section class="room-section"><h2>People here <span id="participantCount" class="saved-count"></span></h2><p class="saved-note">Names update automatically when people join.</p><div class="name-row"><input id="participantName" maxlength="40" placeholder="Your name" aria-label="Your participant name" hidden><button id="joinPresenceButton" class="button secondary">Edit name</button></div><div id="participantsList" class="participant-list" aria-live="polite"></div></section>
 <section class="room-section" id="hostSettings" hidden><h2>Host settings</h2><label class="title-field">Who can control the timer?<select id="controlsMode"><option value="everyone">Everyone sharing it</option><option value="host">Host only</option></select></label><button id="renameCurrentButton" class="button secondary">Rename timer</button></section>
 <p id="guestPermissions" class="saved-note" hidden></p>
 <button id="shareButton" class="button share">Share live timer</button>
@@ -48,6 +48,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-<script src="js/app.js?v=13"></script>
+<script src="js/app.js?v=14"></script>
 </body>
 </html>
