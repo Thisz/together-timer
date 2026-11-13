@@ -302,6 +302,7 @@ function render() {
   if (!state) return;
   const left = remaining(state), full = Math.max(1, state.originalDuration);
   el('countdown').textContent = state.timerType === 'event' ? fmtEvent(left) : fmt(left);
+  el('countdown').classList.toggle('event-countdown', state.timerType === 'event');
   el('ringProgress').style.strokeDashoffset = String(circumference * (1 - Math.max(0, Math.min(1, left / full))));
   el('timerLabel').textContent = state.title || 'Shared countdown';
   const finished = left <= 0;
