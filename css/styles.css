@@ -14,3 +14,5 @@
 .participant-item{padding:10px 12px;border-radius:10px;background:var(--panel2);color:var(--text)}
 select{width:100%;margin:8px 0 12px;padding:12px;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:12px;font-size:1rem}
 button:disabled{opacity:.5;cursor:not-allowed}
+
+.event-countdown{font-size:clamp(1.15rem,4.2vw,1.6rem);letter-spacing:-.025em;text-align:center;padding:0 12px;white-space:nowrap}
