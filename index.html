@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#121826"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Together Timer">
-<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=14">
+<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=20">
 <title>Together Timer</title>
 <script>
 if ('serviceWorker' in navigator) {
@@ -20,11 +20,13 @@ if ('caches' in window) {
 <header class="app-header"><p class="eyebrow">Shared countdown</p><h1>Together Timer</h1><p>Create a timer and control it together, live, on different devices.</p></header>
 <section id="setupPanel" class="panel">
 <h2>Create a timer</h2>
-<div class="time-inputs">
+<label class="title-field">Countdown type<select id="timerType"><option value="duration">Set a duration</option><option value="event">Count down to an event date and time</option></select></label>
+<div id="durationFields" class="time-inputs">
 <label>Hours<input id="hours" type="number" min="0" value="0" inputmode="numeric"></label>
 <label>Minutes<input id="minutes" type="number" min="0" value="30" inputmode="numeric"></label>
 <label>Seconds<input id="seconds" type="number" min="0" value="0" inputmode="numeric"></label>
 </div>
+<label id="eventDateField" class="title-field" hidden>Event date and time (your local time)<input id="eventDateTime" type="datetime-local"></label>
 <label class="title-field">Timer name (required)<input id="timerName" maxlength="60" placeholder="e.g. Dinner countdown" required></label>
 <label class="title-field">Your name (required)<input id="creatorName" maxlength="40" placeholder="e.g. Danny" required></label>
 <p id="setupError" class="error" hidden></p>
@@ -35,9 +37,10 @@ if ('caches' in window) {
 <div id="timerContents" hidden><p id="timerLabel" class="timer-label">Shared countdown</p>
 <div class="progress-wrap" aria-hidden="true"><svg class="progress-ring" viewBox="0 0 220 220"><circle class="ring-track" cx="110" cy="110" r="96"></circle><circle id="ringProgress" class="ring-progress" cx="110" cy="110" r="96"></circle></svg><div id="countdown" class="countdown">00:30:00</div></div>
 <p id="timerStatus" class="status">Connecting…</p>
+<p id="eventDetails" class="saved-note" hidden></p>
 <button id="soundToggleButton" class="button secondary" type="button">🔊 Alert sound: On</button>
 <p id="soundFeedback" class="feedback" role="status"></p>
-<div class="control-grid">
+<div id="timerControls" class="control-grid">
 <button id="startPauseButton" class="button primary">Start</button>
 <button id="restartButton" class="button secondary">Restart</button>
 <button id="minusButton" class="button secondary">−1 minute</button>
@@ -58,6 +61,6 @@ if ('caches' in window) {
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-<script src="js/app.js?v=19"></script>
+<script src="js/app.js?v=20"></script>
 </body>
 </html>
