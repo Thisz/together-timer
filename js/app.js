@@ -71,6 +71,18 @@ el('soundToggleButton').addEventListener('click', () => {
 });
 renderSoundToggle();
 const feedback = message => { el('connectionFeedback').textContent = message || ''; };
+const fmtEvent = ms => {
+  const seconds = Math.ceil(Math.max(0, ms) / 1000);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor(seconds / 3600) % 24;
+  const minutes = Math.floor(seconds / 60) % 60;
+  return days + 'd ' + String(hours).padStart(2, '0') + 'h ' + String(minutes).padStart(2, '0') + 'm ' + String(seconds % 60).padStart(2, '0') + 's';
+};
+el('timerType').addEventListener('change', () => {
+  const eventMode = el('timerType').value === 'event';
+  el('durationFields').hidden = eventMode;
+  el('eventDateField').hidden = !eventMode;
+});
 const fmt = ms => {
   const s = Math.ceil(Math.max(0, ms) / 1000);
   return [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(n => String(n).padStart(2, '0')).join(':');
@@ -276,7 +288,7 @@ function renderSavedTimers() {
 }
 
 function setControls() {
-  controls.forEach(id => el(id).disabled = !ready || busy || !mayControl() || joinedRoom !== roomId);
+  controls.forEach(id => el(id).disabled = !ready || busy || !mayControl() || joinedRoom !== roomId || state?.timerType === 'event');
   el('shareButton').disabled = !ready || joinedRoom !== roomId;
   el('renameCurrentButton').disabled = !ready || !isHost();
   el('hostSettings').hidden = !ready || !isHost();
@@ -289,11 +301,14 @@ function setControls() {
 function render() {
   if (!state) return;
   const left = remaining(state), full = Math.max(1, state.originalDuration);
-  el('countdown').textContent = fmt(left);
+  el('countdown').textContent = state.timerType === 'event' ? fmtEvent(left) : fmt(left);
   el('ringProgress').style.strokeDashoffset = String(circumference * (1 - Math.max(0, Math.min(1, left / full))));
   el('timerLabel').textContent = state.title || 'Shared countdown';
   const finished = left <= 0;
-  el('timerStatus').textContent = finished ? 'Time is up' : state.running ? 'Running · synchronised' : left === state.originalDuration ? 'Ready to start' : 'Paused · synchronised';
+  el('timerStatus').textContent = finished ? (state.timerType === 'event' ? 'Event time has arrived!' : 'Time is up') : state.timerType === 'event' ? 'Counting down to your event · synchronised' : state.running ? 'Running · synchronised' : left === state.originalDuration ? 'Ready to start' : 'Paused · synchronised';
+  el('timerControls').hidden = state.timerType === 'event';
+  el('eventDetails').hidden = state.timerType !== 'event';
+  if (state.timerType === 'event') el('eventDetails').textContent = 'Event: ' + new Date(state.endAt).toLocaleString(undefined, {dateStyle:'full', timeStyle:'short'});
   el('startPauseButton').textContent = finished ? 'Start again' : state.running ? 'Pause' : left === state.originalDuration ? 'Start' : 'Resume';
   document.title = state.running && !finished ? fmt(left) + ' — Together Timer' : 'Together Timer';
   if (finished && !wasFinished && ready && joinedRoom === roomId && state.running) {
@@ -366,7 +381,7 @@ function join(id) {
   });
 }
 async function change(transform) {
-  if (!roomRef || !ready || busy || !mayControl() || joinedRoom !== roomId) return;
+  if (!roomRef || !ready || busy || !mayControl() || joinedRoom !== roomId || state?.timerType === 'event') return;
   busy = true; setControls();
   try {
     const result = await roomRef.transaction(current => {
@@ -403,10 +418,12 @@ function adjust(delta) {
 el('minusButton').addEventListener('click', () => adjust(-60000));
 el('plusButton').addEventListener('click', () => adjust(60000));
 el('createButton').addEventListener('click', async () => {
+  const eventMode = el('timerType').value === 'event';
   const seconds = ['hours','minutes','seconds'].map(id => Math.max(0, Number(el(id).value) || 0));
-  const duration = Math.floor((seconds[0] * 3600 + seconds[1] * 60 + seconds[2]) * 1000);
+  const eventAt = eventMode ? new Date(el('eventDateTime').value).getTime() : 0;
+  const duration = eventMode ? Math.floor(eventAt - now()) : Math.floor((seconds[0] * 3600 + seconds[1] * 60 + seconds[2]) * 1000);
   if (!Number.isSafeInteger(duration) || duration <= 0 || duration > 31536000000) {
-    el('setupError').textContent = 'Enter a duration between one second and one year.';
+    el('setupError').textContent = eventMode ? 'Choose a future event date and time within the next year.' : 'Enter a duration between one second and one year.';
     el('setupError').hidden = false; return;
   }
   const creatorName = el('creatorName').value.trim().slice(0,40);
@@ -433,7 +450,7 @@ el('createButton').addEventListener('click', async () => {
     const title = requestedTitle.slice(0, 60);
     await database.ref('timers/' + id).set({
       title, originalDuration:duration, remaining:duration,
-      running:false, endAt:0, updatedAt:now(), ownerUid:currentUid, controlsMode:'everyone'
+      running:eventMode, endAt:eventMode ? eventAt : 0, updatedAt:now(), ownerUid:currentUid, controlsMode:'everyone', ...(eventMode ? {timerType:'event'} : {})
     });
     history.replaceState({}, '', location.pathname + '?room=' + id);
     localStorage.setItem('togetherTimerRoom', id);
