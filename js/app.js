@@ -322,7 +322,7 @@ function renderDashboard() {
       const url = new URL(location.pathname, location.origin);
       url.searchParams.set('room', item.id);
       try {
-        if (navigator.share) await navigator.share({title:item.title || 'Together Timer',text:'Join my shared countdown',url:url.href});
+        if (navigator.share) await navigator.share({title:'Together Time Invite',url:url.href});
         else { await navigator.clipboard.writeText(url.href); feedback('Invitation link copied.'); }
       } catch (error) { if (error.name !== 'AbortError') feedback('Share this link: ' + url.href); }
     });
@@ -578,7 +578,7 @@ el('shareButton').addEventListener('click', async () => {
   url.searchParams.set('room', roomId);
   try {
     if (navigator.share) {
-      await navigator.share({title:'Together Timer',text:'Join my live countdown',url:url.href});
+      await navigator.share({title:'Together Time Invite',url:url.href});
       return;
     }
     await navigator.clipboard.writeText(url.href);
