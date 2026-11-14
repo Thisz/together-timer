@@ -157,6 +157,7 @@ el('confirmJoinButton').addEventListener('click', () => {
   joinedRoom=roomId;
   el('joinGate').hidden=true;
   el('timerContents').hidden=false;
+  rememberCreated(roomId, state?.title || 'Shared countdown', state?.originalDuration || 0, 'joined');
   registerPresence();
   render();
 });
@@ -171,18 +172,19 @@ const SAVED_KEY = 'togetherTimerCreatedRoomsV1';
 function savedTimers() {
   try {
     const parsed = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed.filter(item => item && validId(item.id)).slice(0, 4) : [];
+    return Array.isArray(parsed) ? parsed.filter(item => item && validId(item.id)).slice(0, 30) : [];
   } catch (_) { return []; }
 }
 function storeTimers(items) {
-  try { localStorage.setItem(SAVED_KEY, JSON.stringify(items.slice(0, 4))); }
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(items.slice(0, 30))); }
   catch (error) { console.warn('Could not save timer list', error); }
   renderSavedTimers();
+  renderDashboard();
   setControls();
 }
-function rememberCreated(id, title, duration) {
+function rememberCreated(id, title, duration, kind = 'created') {
   const list = savedTimers().filter(item => item.id !== id);
-  list.unshift({id, title: title || 'Untitled timer', duration, createdAt: Date.now()});
+  list.unshift({id, title: title || 'Untitled timer', duration, kind, createdAt: Date.now()});
   storeTimers(list);
 }
 function openSavedTimer(id) {
@@ -197,7 +199,7 @@ function openSavedTimer(id) {
 function renderSavedTimers() {
   const list = savedTimers(), panel = el('savedTimersPanel'), holder = el('savedTimersList');
   panel.hidden = list.length === 0;
-  el('savedCount').textContent = list.length + '/4';
+  el('savedCount').textContent = String(list.length);
   holder.replaceChildren();
   list.forEach(item => {
     const row = document.createElement('div');
@@ -207,7 +209,7 @@ function renderSavedTimers() {
     const title = document.createElement('strong');
     title.textContent = item.title || 'Untitled timer';
     const detail = document.createElement('small');
-    detail.textContent = fmt(item.duration || 0) + (item.id === roomId ? ' · Currently open' : '');
+    detail.textContent = (item.kind === 'joined' ? 'Joined' : 'Created') + (item.id === roomId ? ' · Currently open' : '');
     info.append(title, detail);
     const open = document.createElement('button');
     open.type = 'button';
@@ -287,6 +289,63 @@ function renderSavedTimers() {
   });
 }
 
+function showDashboard() {
+  detach();
+  el('timerPanel').hidden = true;
+  el('setupPanel').hidden = true;
+  el('dashboardPanel').hidden = false;
+  el('savedTimersPanel').hidden = true;
+  document.title = 'My timers — Together Timer';
+  try { history.replaceState({}, '', location.pathname); localStorage.removeItem('togetherTimerRoom'); } catch (_) {}
+  renderDashboard();
+}
+function renderDashboard() {
+  const holder = el('dashboardList');
+  holder.replaceChildren();
+  const items = savedTimers();
+  el('dashboardEmpty').hidden = items.length > 0;
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'dashboard-timer';
+    const heading = document.createElement('strong');
+    heading.textContent = item.title || 'Untitled timer';
+    const meta = document.createElement('small');
+    meta.textContent = item.kind === 'joined' ? 'Joined timer' : 'Created by you';
+    const actions = document.createElement('div');
+    actions.className = 'invite-actions';
+    const open = document.createElement('button');
+    open.className = 'button primary'; open.textContent = 'Open';
+    open.addEventListener('click', () => openSavedTimer(item.id));
+    const share = document.createElement('button');
+    share.className = 'button secondary'; share.textContent = 'Share';
+    share.addEventListener('click', async () => {
+      const url = new URL(location.pathname, location.origin);
+      url.searchParams.set('room', item.id);
+      try {
+        if (navigator.share) await navigator.share({title:item.title || 'Together Timer',text:'Join my shared countdown',url:url.href});
+        else { await navigator.clipboard.writeText(url.href); feedback('Invitation link copied.'); }
+      } catch (error) { if (error.name !== 'AbortError') feedback('Share this link: ' + url.href); }
+    });
+    actions.append(open, share);
+    card.append(heading, meta, actions);
+    holder.append(card);
+  });
+}
+function showCreate() {
+  detach();
+  el('dashboardPanel').hidden = true;
+  showSetup();
+  el('savedTimersPanel').hidden = false;
+  try { history.replaceState({}, '', location.pathname); localStorage.removeItem('togetherTimerRoom'); } catch (_) {}
+}
+el('dashboardCreateButton').addEventListener('click', showCreate);
+el('inviteDashboardButton').addEventListener('click', showDashboard);
+el('inviteCreateButton').addEventListener('click', showCreate);
+el('declineInviteButton').addEventListener('click', () => {
+  showDashboard();
+  feedback('Invitation declined. You have not joined this timer.');
+});
+el('myTimersButton').addEventListener('click', showDashboard);
 function setControls() {
   controls.forEach(id => el(id).disabled = !ready || busy || !mayControl() || joinedRoom !== roomId || state?.timerType === 'event');
   el('shareButton').disabled = !ready || joinedRoom !== roomId;
@@ -326,12 +385,16 @@ function render() {
 }
 function showTimer() {
   el('setupPanel').hidden = true;
+  el('dashboardPanel').hidden = true;
+  el('savedTimersPanel').hidden = false;
   el('timerPanel').hidden = false;
   el('joinGate').hidden = joinedRoom === roomId;
   el('timerContents').hidden = joinedRoom !== roomId;
 }
 function showSetup() {
   el('timerPanel').hidden = true;
+  el('dashboardPanel').hidden = true;
+  el('savedTimersPanel').hidden = false;
   el('setupPanel').hidden = false;
   el('shareFeedback').hidden = true;
   document.title = 'Together Timer';
@@ -370,6 +433,7 @@ function join(id) {
       return;
     }
     state = data;
+    el('inviteTitle').textContent = data.title || 'Shared countdown';
     ready = true;
     if (!presenceRoomRef) connectPresence(id);
     if (joinedRoom === id) registerPresence();
@@ -531,7 +595,7 @@ async function init() {
     const params = new URLSearchParams(location.search);
     const id = params.get('room') || localStorage.getItem('togetherTimerRoom');
     if (id) join(id);
-    else feedback('');
+    else { showDashboard(); feedback(''); }
     renderSavedTimers();
   } catch (error) {
     feedback('Firebase connection failed: ' + error.message + '. Enable Anonymous sign-in in Firebase Authentication.');
