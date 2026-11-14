@@ -345,7 +345,6 @@ el('declineInviteButton').addEventListener('click', () => {
   showDashboard();
   feedback('Invitation declined. You have not joined this timer.');
 });
-el('myTimersButton').addEventListener('click', showDashboard);
 function setControls() {
   controls.forEach(id => el(id).disabled = !ready || busy || !mayControl() || joinedRoom !== roomId || state?.timerType === 'event');
   el('shareButton').disabled = !ready || joinedRoom !== roomId;
