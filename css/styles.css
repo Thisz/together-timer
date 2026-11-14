@@ -16,3 +16,5 @@ select{width:100%;margin:8px 0 12px;padding:12px;background:var(--panel2);color:
 button:disabled{opacity:.5;cursor:not-allowed}
 
 .event-countdown{font-size:clamp(1.15rem,4.2vw,1.6rem);letter-spacing:-.025em;text-align:center;padding:0 12px;white-space:nowrap}
+
+#dashboardPanel{margin-bottom:16px}#dashboardList{margin:14px 0}.dashboard-timer{padding:16px;border-radius:14px;background:var(--panel2);display:grid;gap:8px}.dashboard-timer small{color:var(--muted)}.invite-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}#declineInviteButton{margin-top:10px}#myTimersButton{margin-top:12px}#inviteTitle{font-size:1.25rem;font-weight:800;color:var(--text)}
