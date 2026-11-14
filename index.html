@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#121826"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Together Timer">
-<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=20">
+<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=21">
 <title>Together Timer</title>
 <script>
 if ('serviceWorker' in navigator) {
@@ -18,7 +18,8 @@ if ('caches' in window) {
 <body>
 <main class="app-shell">
 <header class="app-header"><p class="eyebrow">Shared countdown</p><h1>Together Timer</h1><p>Create a timer and control it together, live, on different devices.</p></header>
-<section id="setupPanel" class="panel">
+<section id="dashboardPanel" class="panel" hidden><h2>My timers</h2><p id="dashboardEmpty" class="saved-note">You have not created or joined any timers yet. Create your first timer or accept an invitation.</p><div id="dashboardList" class="saved-timers-list"></div><button id="dashboardCreateButton" class="button primary" type="button">+ Create new timer</button></section>
+<section id="setupPanel" class="panel" hidden>
 <h2>Create a timer</h2>
 <label class="title-field">Countdown type<select id="timerType"><option value="duration">Set a duration</option><option value="event">Count down to an event date and time</option></select></label>
 <div id="durationFields" class="time-inputs">
@@ -33,7 +34,7 @@ if ('caches' in window) {
 <button id="createButton" class="button primary">Create shared timer</button>
 </section>
 <section id="timerPanel" class="panel timer-panel" hidden>
-<section id="joinGate" class="room-section" hidden><h2>Join this timer</h2><p class="saved-note">Enter your name to join the shared timer.</p><input id="joinName" maxlength="40" placeholder="Your name" aria-label="Your name" required><button id="confirmJoinButton" class="button primary" style="margin-top:12px">Join timer</button><p id="joinError" class="error" hidden></p></section>
+<section id="joinGate" class="room-section" hidden><h2>You have been invited!</h2><p id="inviteTitle" class="timer-label">Shared countdown</p><p class="saved-note">Accept to add this countdown to My timers. You can also decline, open your dashboard, or create your own.</p><p class="saved-note">Enter your name to accept the invitation.</p><input id="joinName" maxlength="40" placeholder="Your name" aria-label="Your name" required><button id="confirmJoinButton" class="button primary" style="margin-top:12px">Accept &amp; join timer</button><button id="declineInviteButton" class="button secondary" type="button">Decline invitation</button><div class="invite-actions"><button id="inviteDashboardButton" class="button secondary" type="button">My timers</button><button id="inviteCreateButton" class="button secondary" type="button">Create timer</button></div><p id="joinError" class="error" hidden></p></section>
 <div id="timerContents" hidden><p id="timerLabel" class="timer-label">Shared countdown</p>
 <div class="progress-wrap" aria-hidden="true"><svg class="progress-ring" viewBox="0 0 220 220"><circle class="ring-track" cx="110" cy="110" r="96"></circle><circle id="ringProgress" class="ring-progress" cx="110" cy="110" r="96"></circle></svg><div id="countdown" class="countdown">00:30:00</div></div>
 <p id="timerStatus" class="status">Connecting…</p>
@@ -51,16 +52,16 @@ if ('caches' in window) {
 <p id="guestPermissions" class="saved-note" hidden></p>
 <button id="shareButton" class="button share">Share live timer</button>
 <button id="saveTimerButton" class="button secondary">Save this timer to My Timers</button>
-<button id="resetButton" class="button text-button">Create another timer</button>
+<button id="resetButton" class="button text-button">Create another timer</button><button id="myTimersButton" class="button secondary" type="button">My timers</button>
 <p id="shareFeedback" class="feedback" hidden></p>
 </div>
 </section>
-<section id="savedTimersPanel" class="panel saved-timers-panel" hidden><h2>My timers <span id="savedCount" class="saved-count"></span></h2><p class="saved-note">Your four most recently created timers on this device. Open any timer to control or share it.</p><div id="savedTimersList" class="saved-timers-list"></div></section>
+<section id="savedTimersPanel" class="panel saved-timers-panel" hidden><h2>My timers <span id="savedCount" class="saved-count"></span></h2><p class="saved-note">Timers created or joined on this device. Open or share them any time.</p><div id="savedTimersList" class="saved-timers-list"></div></section>
 <p id="connectionFeedback" class="feedback" role="status" aria-live="polite"></p>
 </main>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-<script src="js/app.js?v=20"></script>
+<script src="js/app.js?v=21"></script>
 </body>
 </html>
