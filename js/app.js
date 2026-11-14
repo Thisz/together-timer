@@ -347,6 +347,7 @@ el('declineInviteButton').addEventListener('click', () => {
 });
 function setControls() {
   controls.forEach(id => el(id).disabled = !ready || busy || !mayControl() || joinedRoom !== roomId || state?.timerType === 'event');
+  ['eventMinusDay','eventPlusDay','eventMinusHour','eventPlusHour'].forEach(id => el(id).disabled = !ready || busy || !mayControl() || joinedRoom !== roomId);
   el('shareButton').disabled = !ready || joinedRoom !== roomId;
   el('renameCurrentButton').disabled = !ready || !isHost();
   el('hostSettings').hidden = !ready || !isHost();
@@ -366,6 +367,7 @@ function render() {
   const finished = left <= 0;
   el('timerStatus').textContent = finished ? (state.timerType === 'event' ? 'Event time has arrived!' : 'Time is up') : state.timerType === 'event' ? 'Counting down to your event · synchronised' : state.running ? 'Running · synchronised' : left === state.originalDuration ? 'Ready to start' : 'Paused · synchronised';
   el('timerControls').hidden = state.timerType === 'event';
+  el('eventAdjustControls').hidden = state.timerType !== 'event';
   el('eventDetails').hidden = state.timerType !== 'event';
   if (state.timerType === 'event') el('eventDetails').textContent = 'Event: ' + new Date(state.endAt).toLocaleString(undefined, {dateStyle:'full', timeStyle:'short'});
   el('startPauseButton').textContent = finished ? 'Start again' : state.running ? 'Pause' : left === state.originalDuration ? 'Start' : 'Resume';
@@ -444,8 +446,8 @@ function join(id) {
     setControls();
   });
 }
-async function change(transform) {
-  if (!roomRef || !ready || busy || !mayControl() || joinedRoom !== roomId || state?.timerType === 'event') return;
+async function change(transform, allowEvent = false) {
+  if (!roomRef || !ready || busy || !mayControl() || joinedRoom !== roomId || (state?.timerType === 'event' && !allowEvent)) return;
   busy = true; setControls();
   try {
     const result = await roomRef.transaction(current => {
@@ -479,6 +481,20 @@ function adjust(delta) {
       endAt:s.running && amount > 0 ? t + amount : 0};
   });
 }
+function adjustEvent(delta) {
+  if (!roomRef || !ready || busy || !mayControl() || joinedRoom !== roomId || state?.timerType !== 'event') return;
+  change((s, left, t) => {
+    if (s.timerType !== 'event' || !s.running) return;
+    const endAt = s.endAt + delta;
+    const duration = endAt - t;
+    if (duration < 1000 || duration > 31536000000) return;
+    return {...s, endAt, remaining:duration, originalDuration:Math.max(duration, s.originalDuration + delta)};
+  }, true);
+}
+el('eventMinusDay').addEventListener('click', () => adjustEvent(-86400000));
+el('eventPlusDay').addEventListener('click', () => adjustEvent(86400000));
+el('eventMinusHour').addEventListener('click', () => adjustEvent(-3600000));
+el('eventPlusHour').addEventListener('click', () => adjustEvent(3600000));
 el('minusButton').addEventListener('click', () => adjust(-60000));
 el('plusButton').addEventListener('click', () => adjust(60000));
 el('createButton').addEventListener('click', async () => {
