@@ -4,8 +4,20 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#121826"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Together Timer">
-<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=22">
+<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="css/styles.css?v=23">
 <title>Together Timer</title>
+<meta name="description" content="Create and join shared live countdowns with friends.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Together Timer">
+<meta property="og:title" content="Together Timer — You're invited!">
+<meta property="og:description" content="Join a shared countdown, or create your own timer.">
+<meta property="og:url" content="https://thisz.github.io/together-timer/">
+<meta property="og:image" content="https://thisz.github.io/together-timer/assets/share-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="assets/timer-icon.svg">
+<link rel="apple-touch-icon" href="assets/timer-icon.png">
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(registrations => Promise.all(registrations.map(r => r.unregister()))).catch(() => {});
@@ -62,6 +74,6 @@ if ('caches' in window) {
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-<script src="js/app.js?v=22"></script>
+<script src="js/app.js?v=23"></script>
 </body>
 </html>
